@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+    <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
+    <link rel="shortcut icon" href="img/favicon.jpg" type="image/x-icon">
+
+    <title>Minijuego | SpaceScape</title>
+    <style>
+        *{
+    padding: 0;
+    margin: 0;
+}   
+
+body{
+    height: 100vh;
+    background: #2a2d3d;
+    display: flex;
+    align-items: center;
+}
+
+.contenedor{
+    width: 90%;
+    height: 40%;
+    margin: 0 auto;
+    position: relative;
+    background: linear-gradient(#222146, #1f3942);
+    border-radius: 25px;
+    box-shadow: 0px 0px 15px #9f9f9f;
+    overflow: hidden;
+}
+
+.dino{
+    height: 28px;
+    width: 51px;
+    position: absolute;
+    bottom: 22px;
+    left: 42px;
+    z-index: 2;
+    background: url(img/Nave.png) repeat-x 0px 0px;
+    background-size: 51px 28px;
+    background-position-x: 0px;
+}
+
+.suelo{
+    width: 200%;
+    height: 34px; 
+
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background: url(img/Suelo.png) repeat-x 0 0;
+    background-size: 50% 42px;
+}
+
+.score{
+    width: 100px;
+    height: 30px;
+    position: absolute;
+    top: 5px;
+    right: 15px;
+    z-index: 10;
+    color: aliceblue;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: right;
+}
+
+.cactus{
+    width: 50px;
+    height: 30px;
+    position: absolute;
+    bottom: 25px;
+    left: 600px;
+    z-index: 1;
+    background: url(img/Asteroide-1.png) no-repeat;
+    background-size: 50px 30px;
+}
+
+.game-over {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 28px;
+    font-family: "Jersey 10", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    text-align: center;
+}
+
+button{
+    height: 20px;
+    width: 50px;
+    border: none;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+    background-color: #243742;
+    box-shadow: 3px 3px 0 0 #f0ba19;
+    transition: .5s ease-in-out;
+}
+
+button:hover{
+    background-color: #f0ba19;
+    box-shadow: 3px 3px 0 0 #141f25;
+}
+
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <div class="suelo"></div>
+        <div class="dino"></div>
+        <div class="score">0</div>
+        <div class="game-over">¡Has perdido!
+            <br>
+            <button onclick="location.reload()"><i class='bx  bx-undo'  ></i> </button>
+        </div>
+
+</div>
+
+    </div>
+
+    <script>
+        var time = new Date();
+        var deltaTime = 0;
+
+        if(document.readyState === "complete" || document.readyState === "interactive"){
+            setTimeout(Init,1);
+        }else{
+            document.addEventListener("DOMContentLoaded", Init);
+        }
+
+        function Init() {
+            time = new Date();
+            Start();
+            Loop();
+        }
+
+            function Loop() {
+                deltaTime = (new Date() - time) / 1000;
+                time = new Date();
+                Update()
+                requestAnimationFrame(Loop);
+            }
+
+            var sueloY = 22;
+            var velY = 0;
+            var impulso = 500;
+            var gravedad = 2500;
+
+            var navePosX = 42;
+            var navePosY = sueloY;
+
+            var sueloX = 0;
+            var velEscenario = 1270/3;
+            var gameVel = 1;
+            var score = 0;
+
+            var parado = false;
+            var saltando = false;
+
+            var tiempoHastaObstaculo = 2;
+            var tiempoObstaculoMin = 0.7;
+            var tiempoObstaculoMax = 1.8;
+            var obstaculoPosY =16;
+            var obstaculos = [];
+
+            var contenedor;
+            var dino;
+            var textoScore;
+            var suelo;
+            var gameOver;
+
+            function Start(){
+                gameOver = document.querySelector(".game-over");
+                suelo = document.querySelector(".suelo");
+                contenedor = document.querySelector(".contenedor");
+                textoScore = document.querySelector(".score");
+                dino = document.querySelector(".dino");
+                document.addEventListener("keydown", HandleKeyDown);
+            }
+
+            function HandleKeyDown(ev){
+                if(ev.keyCode == 32){
+                    Saltar();
+                }
+            }
+
+            function Saltar(){
+                if(navePosY === sueloY) {
+                    saltando = true;
+                    velY = impulso;
+                    dino.classList.remove("dino-corriendo");
+                }
+            }
+
+            function Update(){
+                if(parado) return;
+                MoverSuelo();
+                MoverNave();
+                DecidirCrearObstaculos();
+                velY -= gravedad * deltaTime;
+                moverObstaculos();
+                DetectarColision();
+            }
+
+            function MoverSuelo(){
+                sueloX += CalcularDesplazamiento();
+                suelo.style.left = -(sueloX % contenedor.clientWidth) + "px";
+            }
+
+            function CalcularDesplazamiento(){
+                return velEscenario * deltaTime * gameVel;
+            }
+
+            function MoverNave(){
+                navePosY += velY * deltaTime;
+                if(navePosY < sueloY){
+                    TocarSuelo();
+                }
+                dino.style.bottom = navePosY+"px";
+            }
+
+            function TocarSuelo(){
+                navePosY = sueloY;
+                velY = 0;
+                if(saltando){
+                    dino.classList.add("dino-corriendo");
+                }
+                saltando = false;
+            }
+
+            function DecidirCrearObstaculos(){
+                tiempoHastaObstaculo -= deltaTime;
+                if (tiempoHastaObstaculo <= 0){
+                    CrearObstaculo();
+                }
+            }
+
+            function CrearObstaculo(){
+                var obstaculo = document.createElement("div");
+                contenedor.appendChild(obstaculo);
+                obstaculo.classList.add("cactus");
+                obstaculo.posX = contenedor.clientWidth;
+                obstaculo.style.left = contenedor.clientWidth+"px";
+
+                obstaculos.push(obstaculo);
+                tiempoHastaObstaculo = tiempoObstaculoMin + Math.random() * (tiempoObstaculoMax-tiempoObstaculoMin) / gameVel;
+            }
+
+            function moverObstaculos(){
+                for(var i = obstaculos.length -1; i >= 0; i--){
+                    if(obstaculos[i].posX < -obstaculos[i].clientWidth){
+                        obstaculos[i].parentNode.removeChild(obstaculos[i]);
+                        obstaculos.splice(i,1);
+                        GanarPuntos();
+                    }else{
+                        obstaculos[i].posX -= CalcularDesplazamiento();
+                        obstaculos[i].style.left = obstaculos[i].posX+"px";
+                    }
+                }
+            }
+
+            function GanarPuntos(){
+                score++;
+                textoScore.innerText = score;
+            }
+
+            function DetectarColision(){
+                for(var i = 0; i < obstaculos.length; i++){
+                    if(obstaculos[i].posX > navePosX + dino.clientWidth){
+                        break
+                    }else{
+                        if(IsCollision(dino, obstaculos[i], 10, 30, 15, 20)){
+                            GameOver();
+                        }
+                    }
+                }
+            }
+
+            function IsCollision(a, b, paddingTop, paddingRight, paddingBottom, paddingLeft){
+                var aRect = a.getBoundingClientRect();
+                var bRect = b.getBoundingClientRect();
+
+                return !(
+                    ((aRect.top + aRect.height - paddingBottom) < (bRect.top)) ||
+                    (aRect.top + paddingTop > (bRect.top + bRect.height)) ||
+                    ((aRect.left + aRect.width - paddingRight) < (bRect.left)) ||
+                    (aRect.left + paddingLeft > (bRect.left + bRect.width))
+                )
+            }
+
+            function GameOver(){
+                Estrellarse();
+                gameOver.style.display = "block"
+            }
+
+            function Estrellarse(){
+                dino.classList.remove("dino-corriendo");
+                dino.classList.add("dino-estrellado");
+                parado = true;
+            }
+
+        </script>
+    </body>
+    </html>
