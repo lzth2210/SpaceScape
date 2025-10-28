@@ -103,7 +103,7 @@ button{
     border-radius: 10px;
     text-align: center;
     font-weight: bold;
-    background-color: #243742;
+    background-color: #141f25;
     box-shadow: 3px 3px 0 0 #f0ba19;
     transition: .5s ease-in-out;
 }
@@ -161,7 +161,7 @@ button:hover{
             var navePosY = sueloY;
 
             var sueloX = 0;
-            var velEscenario = 1270/3;
+            var velEscenario = 1280/3;
             var gameVel = 1;
             var score = 0;
 
@@ -169,8 +169,8 @@ button:hover{
             var saltando = false;
 
             var tiempoHastaObstaculo = 2;
-            var tiempoObstaculoMin = 0.7;
-            var tiempoObstaculoMax = 1.8;
+            var tiempoObstaculoMin = 0.4;
+            var tiempoObstaculoMax = 2.5;
             var obstaculoPosY =16;
             var obstaculos = [];
 
@@ -257,9 +257,14 @@ button:hover{
                 obstaculo.classList.add("cactus");
                 obstaculo.posX = contenedor.clientWidth;
                 obstaculo.style.left = contenedor.clientWidth+"px";
-
+                var tipo = Math.floor(Math.random() * 2);
+                if (tipo === 0) {
+                    obstaculo.style.backgroundImage = "url(img/Asteroide-1.png)";
+                } else {
+                    obstaculo.style.backgroundImage = "url(img/Asteroide-2.png)";
+                }
                 obstaculos.push(obstaculo);
-                tiempoHastaObstaculo = tiempoObstaculoMin + Math.random() * (tiempoObstaculoMax-tiempoObstaculoMin) / gameVel;
+                tiempoHastaObstaculo = tiempoObstaculoMin + Math.random() * (tiempoObstaculoMax-tiempoObstaculoMin);
             }
 
             function moverObstaculos(){
@@ -278,6 +283,10 @@ button:hover{
             function GanarPuntos(){
                 score++;
                 textoScore.innerText = score;
+                gameVel += 0.06;
+                if(gameVel === 3){
+                    gameVel = 3;
+                }
             }
 
             function DetectarColision(){
@@ -285,7 +294,7 @@ button:hover{
                     if(obstaculos[i].posX > navePosX + dino.clientWidth){
                         break
                     }else{
-                        if(IsCollision(dino, obstaculos[i], 10, 30, 15, 20)){
+                        if(IsCollision(dino, obstaculos[i], 5, 7, 5, 7)){
                             GameOver();
                         }
                     }
